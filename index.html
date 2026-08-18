@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>VISTHUS kast — 3D kleurkiezer</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  three-d-stage:not(:defined){visibility:hidden}
+  html,body{margin:0;height:100%}
+  body{font-family:'IBM Plex Sans',system-ui,sans-serif;color:oklch(0.28 0.01 95);background:oklch(0.96 0.006 95);display:flex;height:100vh;overflow:hidden}
+  #stagewrap{flex:1;min-width:0;position:relative}
+  three-d-stage{width:100%;height:100%;display:block}
+  aside{width:344px;flex:none;background:oklch(0.985 0.004 95);border-left:1px solid oklch(0.9 0.008 95);padding:28px 26px 40px;overflow-y:auto;box-sizing:border-box}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:500;letter-spacing:-0.01em;margin:0 0 6px}
+  .sub{font-size:12.5px;line-height:1.55;color:oklch(0.5 0.01 95);margin:0 0 28px}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.55 0.015 95);margin:0 0 4px}
+  .now{font-size:12.5px;color:oklch(0.42 0.01 95);margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:0 0 30px}
+  .sw{aspect-ratio:1;border-radius:4px;border:1px solid oklch(0.85 0.01 95 / 0.7);cursor:pointer;padding:0;outline-offset:2px}
+  .sw[aria-pressed="true"]{box-shadow:0 0 0 2px oklch(0.28 0.01 95);border-color:transparent}
+  .note{font-size:12px;line-height:1.6;color:oklch(0.5 0.01 95);border-top:1px solid oklch(0.9 0.008 95);padding-top:16px;margin:0}
+</style>
+</head>
+<body>
+  <div id="stagewrap"><three-d-stage name="visthus-kast" background="#F2F0EA" autorotate></three-d-stage></div>
+  <aside>
+    <h1>Kleuren kiezen</h1>
+    <p class="sub">Sleep om de kast te draaien, scroll om te zoomen. Kies één kleur voor de kast en één voor de fronten.</p>
+
+    <h2>Kast</h2>
+    <p class="now" id="nowCarcass"></p>
+    <div class="grid" id="gridCarcass"></div>
+
+    <h2>Fronten</h2>
+    <p class="now" id="nowFront"></p>
+    <div class="grid" id="gridFront"></div>
+
+    <p class="note">Kleuren op het scherm wijken af van verf in de kamer. Neem de winnaars als kleurstaal mee naar de bouwmarkt en houd ze naast de vloer en het daglicht in de kamer.</p>
+  </aside>
+
+  <script src="./three-d-stage.js"></script>
+  <script type="module">
+    const CARCASS = [
+      ['#FFFFFF','puur wit'],['#FAF7F0','wolwit'],['#F5EFE3','crème'],['#F1E9D9','vanille'],['#EFE7D6','zand'],
+      ['#F3EFE6','kalk'],['#EDEAE1','mist'],['#E9E4D8','linnen'],['#F2F1EC','papier'],['#E8E8E2','steengrijs'],
+      ['#F0F2EC','gebroken mint'],['#E7EDE6','zacht salie'],['#DFE7E2','eucalyptus'],['#EAF0F1','ijsblauw'],['#E1EAEE','hemel'],
+      ['#E9EDF3','grijsblauw'],['#F4EEEA','schelp'],['#F2E9E4','zacht rosé'],['#EDE6E6','oudroze grijs'],['#E5E2DC','greige']
+    ];
+    const FRONT = [
+      ['#A8D8C4','mint'],['#8FB79A','salie'],['#6FA86B','gras'],['#3E6B4F','bosgroen'],['#7E8B4F','olijf'],
+      ['#2F7D7A','zeegroen'],['#1F5F6B','petrol'],['#7FC7C9','aqua'],['#8FBEE0','hemelblauw'],['#3F72A8','middenblauw'],
+      ['#2C4F7C','denim'],['#A9A8D6','lavendel'],['#E8823C','oranje'],['#F2B183','zacht oranje'],['#C4664A','terracotta'],
+      ['#D9A63C','oker'],['#F0D48A','boterzacht geel'],['#E4776B','koraal'],['#E0A7A0','oudroze'],['#8C857D','warmgrijs']
+    ];
+
+    const stage = document.querySelector('three-d-stage');
+    const { THREE } = await stage.ready;
+
+    const carcassMat = new THREE.MeshStandardMaterial({ color: '#F5EFE3', roughness: 0.62, metalness: 0.05 });
+    carcassMat.name = 'kast';
+    const frontMat = new THREE.MeshStandardMaterial({ color: '#2F7D7A', roughness: 0.5, metalness: 0.05 });
+    frontMat.name = 'fronten';
+
+    const W = 1.22, H = 2.16, D = 0.59;
+    const model = new THREE.Group();
+    model.name = 'visthus-kast';
+
+    const carcass = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), carcassMat);
+    carcass.name = 'carcass';
+    carcass.position.set(0, H / 2, 0);
+    model.add(carcass);
+
+    const PT = 0.019, PZ = D / 2 + PT / 2 + 0.001;
+    function panel(name, x, y, w, h) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, PT), frontMat);
+      m.name = name;
+      m.position.set(x - W / 2 + w / 2, y + h / 2, PZ);
+      model.add(m);
+    }
+
+    const G = 0.035, M = 0.04;
+    const colL = 0.517, colR = 0.583;
+    const xL = M, xR = M + colL + G;
+    const r = { h1: 0.590, h2: 0.563, h3: 0.259, h4: 0.224, h5: 0.304 };
+    const y5 = M, y4 = y5 + r.h5 + G, y3 = y4 + r.h4 + G, y2 = y3 + r.h3 + G, y1 = y2 + r.h2 + G;
+    const half = (colL - G) / 2;
+
+    panel('deur-links-boven', xL, y1, colL, r.h1);
+    panel('deur-links-midden', xL, y2, colL, r.h2);
+    panel('lade-klein-1', xL, y3, half, r.h3);
+    panel('lade-klein-2', xL + half + G, y3, half, r.h3);
+    panel('lade-klein-3', xL, y4, half, r.h4);
+    panel('lade-klein-4', xL + half + G, y4, half, r.h4);
+    panel('lade-breed-links', xL, y5, colL, r.h5);
+    panel('deur-rechts', xR, y4, colR, r.h1 + r.h2 + r.h3 + r.h4 + 3 * G);
+    panel('lade-breed-rechts', xR, y5, colR, r.h5);
+
+    // plinth recess
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.06, 0.02, D - 0.04), carcassMat);
+    plinth.name = 'plint';
+    plinth.position.set(0, 0.01, -0.01);
+    model.add(plinth);
+
+    stage.setObject(model);
+
+    function buildGrid(el, list, mat, label, initial) {
+      list.forEach(([hex, name], i) => {
+        const b = document.createElement('button');
+        b.className = 'sw';
+        b.style.background = hex;
+        b.title = name + ' ' + hex;
+        b.setAttribute('aria-pressed', i === initial ? 'true' : 'false');
+        b.onclick = () => {
+          mat.color.set(hex);
+          [...el.children].forEach(c => c.setAttribute('aria-pressed', 'false'));
+          b.setAttribute('aria-pressed', 'true');
+          label.textContent = name + ' · ' + hex.toUpperCase();
+        };
+        el.appendChild(b);
+      });
+      label.textContent = list[initial][1] + ' · ' + list[initial][0].toUpperCase();
+    }
+    buildGrid(document.getElementById('gridCarcass'), CARCASS, carcassMat, document.getElementById('nowCarcass'), 2);
+    buildGrid(document.getElementById('gridFront'), FRONT, frontMat, document.getElementById('nowFront'), 5);
+  </script>
+</body>
+</html>
